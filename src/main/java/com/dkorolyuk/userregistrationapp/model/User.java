@@ -3,6 +3,7 @@ package com.dkorolyuk.userregistrationapp.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,7 +43,7 @@ public class User {
     private String password;
 
     @Enumerated
-    @Column(name = "REGISTRATION_STATUS", nullable = false)
+    @Column(name = "REGISTRATION_STATUS_ID", nullable = false)
     @EqualsAndHashCode.Exclude
     private RegistrationStatus registrationStatus;
 

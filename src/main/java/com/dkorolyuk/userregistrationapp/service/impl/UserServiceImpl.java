@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static com.dkorolyuk.userregistrationapp.model.RegistrationStatus.CONFIRMED;
 import static com.dkorolyuk.userregistrationapp.model.RegistrationStatus.PENDING;
 import static com.dkorolyuk.userregistrationapp.util.Constants.EMAIL_CONFIRMATION_API_LINK;
+import static com.dkorolyuk.userregistrationapp.util.Constants.SUCCESS_REGISTRATION_MESSAGE;
 
 @Slf4j
 @Service
@@ -51,12 +53,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void confirmRegistration(String email) {
-        userRepository.findByEmail(email)
-                .ifPresentOrElse(user -> {
+    public boolean confirmRegistration(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> {
                     user.setRegistrationStatus(CONFIRMED);
                     userRepository.save(user);
-                }, () -> log.warn("User with email {} not found during confirmation.", email));
+                    return true;
+                })
+                .orElse(false);
     }
 
     private String hashPassword(String password) {

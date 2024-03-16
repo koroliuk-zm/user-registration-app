@@ -75,11 +75,12 @@ class UserServiceImplTest {
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
-        userService.confirmRegistration(email);
+        boolean result = userService.confirmRegistration(email);
 
         verify(userRepository).save(user);
 
         assertThat(user.getRegistrationStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
+        assertThat(result).isTrue();
     }
 
     @Test
@@ -88,8 +89,10 @@ class UserServiceImplTest {
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-        userService.confirmRegistration(email);
+        boolean result = userService.confirmRegistration(email);
 
         verify(userRepository, never()).save(any());
+
+        assertThat(result).isFalse();
     }
 }

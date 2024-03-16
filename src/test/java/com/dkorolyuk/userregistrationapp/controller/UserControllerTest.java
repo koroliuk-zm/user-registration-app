@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,7 +36,7 @@ class UserControllerTest {
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"name\": \"Ivan\", \"email\": \"ivan@gmail.com\", \"password\": \"password\", \"passwordConfirm\": \"password\" }"))
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(status().isCreated());
 
         verify(userService).saveUser(new UserDto("Ivan", "ivan@gmail.com", "password", "password"));
     }
@@ -45,7 +46,7 @@ class UserControllerTest {
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"name\": \"Dmytro\", \"email\": \"dmytro@gmail.com\", \"password\": \"12345678\", \"passwordConfirm\": \"87654321\" }"))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -58,7 +59,7 @@ class UserControllerTest {
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"name\": \"Andrii\", \"email\": \"andrii@gmail.com\", \"password\": \"password\", \"passwordConfirm\": \"password\" }"))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .andExpect(status().isBadRequest());
 
         verify(userService).getUser(userDto);
     }
@@ -67,10 +68,26 @@ class UserControllerTest {
     void confirmRegistration_isOkWhenRegistrationConfirmed() throws Exception {
         String email = "oleksandr@gmail.com";
 
+        when(userService.confirmRegistration(email)).thenReturn(true);
+
         mockMvc.perform(patch("/api/users/confirm-registration")
                         .param("email", email)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk());
+                .andExpect(status().isOk());
+
+        verify(userService).confirmRegistration(email);
+    }
+
+    @Test
+    void confirmRegistration_isbadRequestWhenEmailNotFound() throws Exception {
+        String email = "oleksandr@gmail.com";
+
+        when(userService.confirmRegistration(email)).thenReturn(false);
+
+        mockMvc.perform(patch("/api/users/confirm-registration")
+                        .param("email", email)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
 
         verify(userService).confirmRegistration(email);
     }

@@ -12,5 +12,5 @@ public interface UserService {
 
     void sendEmail(String email);
 
-    void confirmRegistration(String email);
+    boolean confirmRegistration(String email);
 }

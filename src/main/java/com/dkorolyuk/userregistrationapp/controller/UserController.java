@@ -1,13 +1,14 @@
 package com.dkorolyuk.userregistrationapp.controller;
 
 import com.dkorolyuk.userregistrationapp.dto.UserDto;
+import com.dkorolyuk.userregistrationapp.handler.GeneralHandler;
+import com.dkorolyuk.userregistrationapp.handler.UserHandler;
 import com.dkorolyuk.userregistrationapp.service.UserService;
-import com.dkorolyuk.userregistrationapp.validation.UserValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,23 +22,32 @@ import java.util.Optional;
 import static com.dkorolyuk.userregistrationapp.util.Constants.CONFIRM_REGISTRATION_MESSAGE;
 import static com.dkorolyuk.userregistrationapp.util.Constants.INVALID_INPUT_MESSAGE;
 import static com.dkorolyuk.userregistrationapp.util.Constants.SUCCESS_REGISTRATION_MESSAGE;
+import static com.dkorolyuk.userregistrationapp.util.Constants.UNSUCCESSFUL_REGISTRATION_MESSAGE;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
+
     private final UserService userService;
-    private final UserValidator userValidator;
+    private final GeneralHandler generalHandler;
+    private final UserHandler userHandler;
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@Validated @RequestBody UserDto user, BindingResult bindingResult) {
 
+        log.info("User registration called for user {}", user.name());
+
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(buildErrorMessage(bindingResult));
+            return ResponseEntity.badRequest().body(
+                    generalHandler.buildBindingErrorMessage(bindingResult, INVALID_INPUT_MESSAGE));
         }
 
         return Optional.ofNullable(userService.getUser(user))
-                .map(existingUser -> userValidator.validateUserDuplicates(user, existingUser))
+                .map(existingUser -> ResponseEntity.badRequest().body(
+                        userHandler.buildDuplicationMessage(user, existingUser)
+                ))
                 .orElseGet(() -> {
                     userService.saveUser(user);
                     userService.sendEmail(user.email());
@@ -45,17 +55,16 @@ public class UserController {
                 });
     }
 
+
     @PatchMapping("/confirm-registration")
     public ResponseEntity<String> confirmRegistration(@RequestParam String email) {
-        userService.confirmRegistration(email);
-        return ResponseEntity.ok(SUCCESS_REGISTRATION_MESSAGE + email);
-    }
 
-    private String buildErrorMessage(BindingResult bindingResult) {
-        StringBuilder errorMessage = new StringBuilder(INVALID_INPUT_MESSAGE);
-        for (FieldError error : bindingResult.getFieldErrors()) {
-            errorMessage.append(error.getDefaultMessage()).append("; ");
-        }
-        return errorMessage.toString();
+        log.info("User registration confirmation started for user with email {}", email);
+
+        boolean isSuccessful = userService.confirmRegistration(email);
+
+        return isSuccessful ?
+                ResponseEntity.ok(SUCCESS_REGISTRATION_MESSAGE + email) :
+                ResponseEntity.badRequest().body(UNSUCCESSFUL_REGISTRATION_MESSAGE + email);
     }
 }

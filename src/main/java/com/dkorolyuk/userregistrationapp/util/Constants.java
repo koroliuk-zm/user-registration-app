@@ -6,6 +6,7 @@ public class Constants {
 
     public static final String CONFIRM_REGISTRATION_MESSAGE = "Please check your email to complete the registration";
     public static final String SUCCESS_REGISTRATION_MESSAGE = "The registration successfully completed for user with email ";
+    public static final String UNSUCCESSFUL_REGISTRATION_MESSAGE = "There is no in db user with such email  ";
     public static final String INVALID_INPUT_MESSAGE = "Input data is not valid. Please correct your data: ";
 
     public static final String PASSWORD_REGEXP = "^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]*$";
