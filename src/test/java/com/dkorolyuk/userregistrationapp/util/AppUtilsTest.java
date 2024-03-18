@@ -1,26 +1,23 @@
-package com.dkorolyuk.userregistrationapp.handler.impl;
+package com.dkorolyuk.userregistrationapp.util;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
+import static com.dkorolyuk.userregistrationapp.util.AppUtils.buildBindingErrorMessage;
 import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GeneralHandlerImplTest {
+@ExtendWith(MockitoExtension.class)
+class AppUtilsTest {
 
-    private GeneralHandlerImpl generalHandler;
+    @Mock
     private BindingResult bindingResult;
-
-    @BeforeEach
-    void setUp() {
-        generalHandler = new GeneralHandlerImpl();
-        bindingResult = mock(BindingResult.class);
-    }
 
     @Test
     void buildErrorResponse_errorsPresent() {
@@ -29,7 +26,7 @@ class GeneralHandlerImplTest {
 
         when(bindingResult.getFieldErrors()).thenReturn(of(error1, error2));
 
-        String message = generalHandler.buildBindingErrorMessage(bindingResult, "Initial message: ");
+        String message = buildBindingErrorMessage(bindingResult, "Initial message: ");
 
         assertThat(message).contains(error1.getDefaultMessage(), error2.getDefaultMessage());
     }
@@ -38,8 +35,8 @@ class GeneralHandlerImplTest {
     void buildErrorResponse_withoutErrors() {
         when(bindingResult.getFieldErrors()).thenReturn(emptyList());
 
-        String response = generalHandler.buildBindingErrorMessage(bindingResult, "");
+        String message = buildBindingErrorMessage(bindingResult, "");
 
-        assertThat(response).isBlank();
+        assertThat(message).isBlank();
     }
 }

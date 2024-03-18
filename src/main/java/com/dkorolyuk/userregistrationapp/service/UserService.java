@@ -13,4 +13,6 @@ public interface UserService {
     void sendEmail(String email);
 
     boolean confirmRegistration(String email);
+
+    String buildDuplicationMessage(UserDto userDto, User existingUser);
 }

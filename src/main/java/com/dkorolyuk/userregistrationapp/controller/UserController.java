@@ -1,8 +1,6 @@
 package com.dkorolyuk.userregistrationapp.controller;
 
 import com.dkorolyuk.userregistrationapp.dto.UserDto;
-import com.dkorolyuk.userregistrationapp.handler.GeneralHandler;
-import com.dkorolyuk.userregistrationapp.handler.UserHandler;
 import com.dkorolyuk.userregistrationapp.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
+import static com.dkorolyuk.userregistrationapp.util.AppUtils.buildBindingErrorMessage;
 import static com.dkorolyuk.userregistrationapp.util.Constants.CONFIRM_REGISTRATION_MESSAGE;
 import static com.dkorolyuk.userregistrationapp.util.Constants.INVALID_INPUT_MESSAGE;
 import static com.dkorolyuk.userregistrationapp.util.Constants.SUCCESS_REGISTRATION_MESSAGE;
@@ -31,8 +30,6 @@ import static com.dkorolyuk.userregistrationapp.util.Constants.UNSUCCESSFUL_REGI
 public class UserController {
 
     private final UserService userService;
-    private final GeneralHandler generalHandler;
-    private final UserHandler userHandler;
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@Validated @RequestBody UserDto user, BindingResult bindingResult) {
@@ -40,13 +37,13 @@ public class UserController {
         log.info("User registration called for user {}", user.name());
 
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(
-                    generalHandler.buildBindingErrorMessage(bindingResult, INVALID_INPUT_MESSAGE));
+            return ResponseEntity.badRequest()
+                    .body(buildBindingErrorMessage(bindingResult, INVALID_INPUT_MESSAGE));
         }
 
         return Optional.ofNullable(userService.getUser(user))
                 .map(existingUser -> ResponseEntity.badRequest().body(
-                        userHandler.buildDuplicationMessage(user, existingUser)
+                        userService.buildDuplicationMessage(user, existingUser)
                 ))
                 .orElseGet(() -> {
                     userService.saveUser(user);

@@ -1,7 +1,6 @@
 package com.dkorolyuk.userregistrationapp.dto;
 
 
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -23,15 +22,6 @@ public record UserDto(
         @NotNull(message = "{user.password.null}")
         @Size(min = 8, max = 16, message = "[user.password.size}")
         @Pattern(regexp = PASSWORD_REGEXP, message = "{user.password.pattern}")
-        String password,
-
-        @NotNull(message = "{user.passwordConfirm.null}")
-        @Size(min = 8, max = 16, message = "{user.passwordConfirm.size}")
-        @Pattern(regexp = PASSWORD_REGEXP, message = "{user.passwordConfirm.pattern}")
-        String passwordConfirm
+        String password
 ) {
-        @AssertTrue(message = "{user.password.not.matches}")
-        public boolean isPasswordMatch() {
-                return password != null && password.equals(passwordConfirm);
-        }
 }

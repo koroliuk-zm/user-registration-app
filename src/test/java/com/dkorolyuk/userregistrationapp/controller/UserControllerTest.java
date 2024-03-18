@@ -11,7 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.LocalDate;
 
@@ -35,30 +34,22 @@ class UserControllerTest {
     void registerUser_isCreatedWhenUserIsValid() throws Exception {
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"name\": \"Ivan\", \"email\": \"ivan@gmail.com\", \"password\": \"password\", \"passwordConfirm\": \"password\" }"))
+                        .content("{ \"name\": \"Ivan\", \"email\": \"ivan@gmail.com\", \"password\": \"password\" }"))
                 .andExpect(status().isCreated());
 
-        verify(userService).saveUser(new UserDto("Ivan", "ivan@gmail.com", "password", "password"));
+        verify(userService).saveUser(new UserDto("Ivan", "ivan@gmail.com", "password"));
     }
 
     @Test
-    void registerUser_isBadRequestWhenPasswordsNotMatch() throws Exception {
-        mockMvc.perform(post("/api/users/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"name\": \"Dmytro\", \"email\": \"dmytro@gmail.com\", \"password\": \"12345678\", \"passwordConfirm\": \"87654321\" }"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void registerUser_isBadRequestWhenRegistrationNotConfirmed() throws Exception {
-        UserDto userDto = new UserDto("Andrii", "andrii@gmail.com", "password", "password");
+    void registerUser_isBadRequestWhenUserAlreadyExists() throws Exception {
+        UserDto userDto = new UserDto("Andrii", "andrii@gmail.com", "password");
         User userFromDb = new User(1L, "Andrii", "andrii@gmail.com", "password", RegistrationStatus.PENDING, LocalDate.now());
 
         when(userService.getUser(userDto)).thenReturn(userFromDb);
 
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"name\": \"Andrii\", \"email\": \"andrii@gmail.com\", \"password\": \"password\", \"passwordConfirm\": \"password\" }"))
+                        .content("{ \"name\": \"Andrii\", \"email\": \"andrii@gmail.com\", \"password\": \"password\"}"))
                 .andExpect(status().isBadRequest());
 
         verify(userService).getUser(userDto);
