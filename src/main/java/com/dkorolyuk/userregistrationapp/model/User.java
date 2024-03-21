@@ -1,12 +1,15 @@
 package com.dkorolyuk.userregistrationapp.model;
 
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -20,7 +23,7 @@ import lombok.ToString;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "USERS")
+@Table(name = "USERS", indexes = @Index(columnList = "REGISTRATION_STATUS_ID"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,8 +36,10 @@ public class User {
     @Column(name = "USERNAME", nullable = false, unique = true)
     private String name;
 
-    @Column(name = "EMAIL", nullable = false, unique = true)
-    private String email;
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Email email;
 
     @Column(name = "PASSWORD", nullable = false)
     @EqualsAndHashCode.Exclude
@@ -43,11 +48,9 @@ public class User {
 
     @Enumerated
     @Column(name = "REGISTRATION_STATUS_ID", nullable = false)
-    @EqualsAndHashCode.Exclude
     private RegistrationStatus registrationStatus;
 
     @Temporal(TemporalType.DATE)
     @Column(name = "REGISTRATION_DATE", nullable = false)
-    @EqualsAndHashCode.Exclude
     private LocalDate registrationDate;
 }

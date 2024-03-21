@@ -9,7 +9,7 @@ import static com.dkorolyuk.userregistrationapp.util.Constants.EMAIL_REGEXP;
 import static com.dkorolyuk.userregistrationapp.util.Constants.NAME_REGEXP;
 import static com.dkorolyuk.userregistrationapp.util.Constants.PASSWORD_REGEXP;
 
-public record UserDto(
+public record RegistrationRequest(
         @NotNull(message = "{user.name.null}")
         @Size(min = 2, max = 20, message = "{user.name.size}")
         @Pattern(regexp = NAME_REGEXP, message = "{user.name.pattern}")

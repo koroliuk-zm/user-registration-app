@@ -20,5 +20,6 @@ public class Constants {
     public static final String VALIDATION_NAME_EXISTS_MESSAGE = "User with such name already exists";
     public static final String VALIDATION_EMAIL_EXISTS_MESSAGE = "User with such email already exists";
 
-    public static final String EMAIL_CONFIRMATION_API_LINK = "/api/users/confirm-registration?email=";
+    public static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    public static final int CONFIRMATION_CODE_LENGTH = 20;
 }

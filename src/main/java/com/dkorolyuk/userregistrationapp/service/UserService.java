@@ -1,18 +1,18 @@
 package com.dkorolyuk.userregistrationapp.service;
 
-import com.dkorolyuk.userregistrationapp.dto.UserDto;
+import com.dkorolyuk.userregistrationapp.dto.RegistrationRequest;
 import com.dkorolyuk.userregistrationapp.model.User;
 
 
 public interface UserService {
 
-    User getUser(UserDto user);
+    User getUser(RegistrationRequest user);
 
-    void saveUser(UserDto user);
+    User saveUser(RegistrationRequest user);
 
-    void sendEmail(String email);
+    boolean confirmRegistration(String email, String confirmationCode);
 
-    boolean confirmRegistration(String email);
+    String buildDuplicationMessage(RegistrationRequest registrationRequest, User existingUser);
 
-    String buildDuplicationMessage(UserDto userDto, User existingUser);
+    void deleteExpiredAccounts();
 }

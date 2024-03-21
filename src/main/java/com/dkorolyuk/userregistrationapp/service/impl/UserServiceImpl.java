@@ -1,6 +1,7 @@
 package com.dkorolyuk.userregistrationapp.service.impl;
 
-import com.dkorolyuk.userregistrationapp.dto.UserDto;
+import com.dkorolyuk.userregistrationapp.dto.RegistrationRequest;
+import com.dkorolyuk.userregistrationapp.model.Email;
 import com.dkorolyuk.userregistrationapp.model.User;
 import com.dkorolyuk.userregistrationapp.repository.UserRepository;
 import com.dkorolyuk.userregistrationapp.service.UserService;
@@ -11,13 +12,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static com.dkorolyuk.userregistrationapp.model.RegistrationStatus.CONFIRMED;
 import static com.dkorolyuk.userregistrationapp.model.RegistrationStatus.PENDING;
-import static com.dkorolyuk.userregistrationapp.util.Constants.EMAIL_CONFIRMATION_API_LINK;
+import static com.dkorolyuk.userregistrationapp.util.Constants.DAYS_TO_WAIT_CONFIRMATION;
 import static com.dkorolyuk.userregistrationapp.util.Constants.VALIDATION_EMAIL_EXISTS_MESSAGE;
-import static com.dkorolyuk.userregistrationapp.util.Constants.VALIDATION_PENDING_STATUS_MESSAGE;
 import static com.dkorolyuk.userregistrationapp.util.Constants.VALIDATION_NAME_EXISTS_MESSAGE;
+import static com.dkorolyuk.userregistrationapp.util.Constants.VALIDATION_PENDING_STATUS_MESSAGE;
 
 @Slf4j
 @Service
@@ -26,51 +29,78 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-
     @Override
     @Transactional(readOnly = true)
-    public User getUser(UserDto user) {
-        return userRepository.findByNameOrEmail(user.name(), user.email());
-
+    public User getUser(RegistrationRequest user) {
+        return userRepository.findByNameOrEmailEmailAddressAndRegistrationStatus(user.name(), user.email(), CONFIRMED);
     }
 
     @Override
     @Transactional
-    public void saveUser(UserDto userDto) {
+    public User saveUser(RegistrationRequest registrationRequest) {
         User user = User.builder()
-                .name(userDto.name())
-                .email(userDto.email())
-                .password(hashPassword(userDto.password()))
+                .name(registrationRequest.name())
+                .password(hashPassword(registrationRequest.password()))
                 .registrationStatus(PENDING)
                 .registrationDate(LocalDate.now()).build();
 
-        userRepository.save(user);
-    }
+        Email email = Email.builder()
+                .emailAddress(registrationRequest.email())
+                .user(user).build();
 
-    @Override
-    public void sendEmail(String email) {
-        log.info("Please confirm your registration by calling api: {}{}", EMAIL_CONFIRMATION_API_LINK, email);
+        user.setEmail(email);
+
+        return userRepository.save(user);
     }
 
     @Override
     @Transactional
-    public boolean confirmRegistration(String email) {
-        return userRepository.findByEmailAndRegistrationStatus(email, PENDING)
-                .map(user -> {
-                    user.setRegistrationStatus(CONFIRMED);
-                    userRepository.save(user);
-                    return true;
-                })
-                .orElse(false);
+    public boolean confirmRegistration(String email, String confirmationCode) {
+        List<User> usersByEmail = userRepository.findByEmailEmailAddress(email);
+        boolean isEmailAlreadyConfirmed = usersByEmail.stream()
+                .anyMatch(user -> user.getRegistrationStatus() == CONFIRMED);
+
+        if (isEmailAlreadyConfirmed) {
+            return false;
+        }
+
+        return usersByEmail.stream()
+                    .filter(user -> user.getEmail().getConfirmationCode().equals(confirmationCode) && user.getRegistrationStatus() == PENDING)
+                    .findFirst()
+                    .map(user -> {
+                        user.setRegistrationStatus(CONFIRMED);
+                        userRepository.save(user);
+                        return true;
+                    })
+                    .orElse(false);
     }
 
     @Override
-    public String buildDuplicationMessage(UserDto userDto, User existingUser) {
+    public String buildDuplicationMessage(RegistrationRequest registrationRequest, User existingUser) {
         StringBuilder builder = new StringBuilder();
         buildErrorMessage(existingUser.getRegistrationStatus(), PENDING, builder, VALIDATION_PENDING_STATUS_MESSAGE);
-        buildErrorMessage(existingUser.getName(), userDto.name(), builder, VALIDATION_NAME_EXISTS_MESSAGE);
-        buildErrorMessage(existingUser.getEmail(), userDto.email(), builder, VALIDATION_EMAIL_EXISTS_MESSAGE);
+        buildErrorMessage(existingUser.getName(), registrationRequest.name(), builder, VALIDATION_NAME_EXISTS_MESSAGE);
+        buildErrorMessage(existingUser.getEmail().getEmailAddress(), registrationRequest.email(), builder, VALIDATION_EMAIL_EXISTS_MESSAGE);
         return builder.toString();
+    }
+
+
+    @Override
+    @Transactional
+    public void deleteExpiredAccounts() {
+        try {
+            Optional.ofNullable(userRepository.findByRegistrationStatusAndRegistrationDateBefore(PENDING, LocalDate.now().minusDays(DAYS_TO_WAIT_CONFIRMATION)))
+                    .filter(usersToDelete -> !usersToDelete.isEmpty())
+                    .ifPresentOrElse(
+                            usersToDelete -> {
+                                userRepository.deleteAll(usersToDelete);
+                                log.info("{} expired unconfirmed accounts deleted.", usersToDelete.size());
+                            },
+                            () -> log.info("No expired unconfirmed accounts found.")
+                    );
+        } catch (Exception e) {
+            log.error("An error occurred while trying to delete expired unconfirmed accounts: {}", e.getMessage());
+        }
     }
 
     private void buildErrorMessage(Object o1, Object o2, StringBuilder builder, String errorMessage) {

@@ -1,72 +1,27 @@
 package com.dkorolyuk.userregistrationapp.scheduling;
 
-import com.dkorolyuk.userregistrationapp.model.RegistrationStatus;
-import com.dkorolyuk.userregistrationapp.model.User;
-import com.dkorolyuk.userregistrationapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.dkorolyuk.userregistrationapp.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UserSchedulerTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
 
     @InjectMocks
     private UserScheduler userScheduler;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
-    void deleteExpiredUnconfirmedAccounts_Success() {
-        List<User> usersToDelete = new ArrayList<>();
-        User user1 = new User(1L, "user1", "user1@example.com", "password", RegistrationStatus.PENDING, LocalDate.now().minusDays(3));
-        User user2 = new User(2L, "user2", "user2@example.com", "password", RegistrationStatus.PENDING, LocalDate.now().minusDays(3));
-        usersToDelete.add(user1);
-        usersToDelete.add(user2);
-
-        when(userRepository.findByRegistrationStatusAndRegistrationDateBefore(RegistrationStatus.PENDING, LocalDate.now().minusDays(2)))
-                .thenReturn(usersToDelete);
-
+    void deleteExpiredUnconfirmedAccounts_callDeleteExpiredAccounts() {
         userScheduler.deleteExpiredUnconfirmedAccounts();
-
-        verify(userRepository, times(1)).deleteAll(usersToDelete);
-    }
-
-    @Test
-    void deleteExpiredUnconfirmedAccounts_NoExpiredAccounts() {
-        List<User> usersToDelete = new ArrayList<>();
-
-        when(userRepository.findByRegistrationStatusAndRegistrationDateBefore(RegistrationStatus.PENDING, LocalDate.now().minusDays(2)))
-                .thenReturn(usersToDelete);
-
-        userScheduler.deleteExpiredUnconfirmedAccounts();
-
-        verify(userRepository, never()).deleteAll(anyList());
-    }
-
-    @Test
-    void deleteExpiredUnconfirmedAccounts_ExceptionHandling() {
-        when(userRepository.findByRegistrationStatusAndRegistrationDateBefore(RegistrationStatus.PENDING, LocalDate.now().minusDays(2)))
-                .thenThrow(new RuntimeException("Database connection failed"));
-
-        userScheduler.deleteExpiredUnconfirmedAccounts();
-
-        verify(userRepository, never()).deleteAll(anyList());
+        verify(userService, times(1)).deleteExpiredAccounts();
     }
 }
