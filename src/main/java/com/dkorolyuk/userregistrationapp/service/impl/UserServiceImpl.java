@@ -69,6 +69,7 @@ public class UserServiceImpl implements UserService {
                     .findFirst()
                     .map(user -> {
                         user.setRegistrationStatus(CONFIRMED);
+                        user.getEmail().setConfirmationCode(null);
                         userRepository.save(user);
                         return true;
                     })
